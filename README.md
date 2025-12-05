@@ -9,6 +9,10 @@ Ce projet est une application console en langage C permettant de gérer un syst�
 - Ajouter une réservation
 - Afficher les réservations existantes
 - Sauvegarder les données dans un fichier texte (`reservations.txt`)
+- Gérer les réservations avec vérification des conflits
+- Calculer automatiquement le coût des réservations
+- Générer des factures simples
+- Fournir des statistiques d'utilisation
   
 
 ## 📁 Structure du projet
