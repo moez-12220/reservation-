@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,9 +21,17 @@ typedef struct {
     float tarif;
 } Reservation;
 
+// ----------- Arbre binaire pour les réservations -----------
+typedef struct Node {
+    Reservation data;
+    struct Node *left;
+    struct Node *right;
+} Node;
+
 Salle salles[MAX];
-Reservation reservations[MAX];
-int nb_salles = 0, nb_reservations = 0;
+int nb_salles = 0;
+Node *racine = NULL; // racine de l'arbre
+int compteur_id = 0;
 
 // ---------------- MENU ----------------
 void menu() {
@@ -46,24 +53,44 @@ int convertirHeureEnMinutes(char *heure) {
     return h * 60 + m;
 }
 
+// ---------------- INSÉRER DANS ARBRE ----------------
+Node* inserer(Node* root, Reservation r) {
+    if (root == NULL) {
+        Node* newNode = (Node*)malloc(sizeof(Node));
+        newNode->data = r;
+        newNode->left = newNode->right = NULL;
+        return newNode;
+    }
+    if (r.id < root->data.id)
+        root->left = inserer(root->left, r);
+    else if (r.id > root->data.id)
+        root->right = inserer(root->right, r);
+    return root;
+}
+
+// ---------------- RECHERCHER ----------------
+Reservation* rechercher(Node* root, int id) {
+    if (root == NULL) return NULL;
+    if (id == root->data.id) return &root->data;
+    if (id < root->data.id) return rechercher(root->left, id);
+    else return rechercher(root->right, id);
+}
+
 // ---------------- VERIFIER DISPONIBILITE ----------------
-int verifierDisponibilite(Reservation r) {
-    int debut_r = convertirHeureEnMinutes(r.heure_debut);
-    int fin_r   = convertirHeureEnMinutes(r.heure_fin);
+int verifierDisponibilite(Node* root, Reservation r) {
+    if (root == NULL) return 1;
+    if (strcmp(r.nom_salle, root->data.nom_salle) == 0 &&
+        strcmp(r.date, root->data.date) == 0) {
+        int debut_r = convertirHeureEnMinutes(r.heure_debut);
+        int fin_r   = convertirHeureEnMinutes(r.heure_fin);
+        int debut_exist = convertirHeureEnMinutes(root->data.heure_debut);
+        int fin_exist   = convertirHeureEnMinutes(root->data.heure_fin);
 
-    for (int i = 0; i < nb_reservations; i++) {
-        if (strcmp(r.nom_salle, reservations[i].nom_salle) == 0 &&
-            strcmp(r.date, reservations[i].date) == 0) {
-
-            int debut_exist = convertirHeureEnMinutes(reservations[i].heure_debut);
-            int fin_exist   = convertirHeureEnMinutes(reservations[i].heure_fin);
-
-            if (!(fin_r <= debut_exist || debut_r >= fin_exist)) {
-                return 0; // conflit
-            }
+        if (!(fin_r <= debut_exist || debut_r >= fin_exist)) {
+            return 0; // conflit
         }
     }
-    return 1; // disponible
+    return verifierDisponibilite(root->left, r) && verifierDisponibilite(root->right, r);
 }
 
 // ---------------- AJOUTER SALLE ----------------
@@ -81,7 +108,7 @@ void ajouterSalle() {
 // ---------------- AJOUTER RESERVATION ----------------
 void ajouterReservation() {
     Reservation r;
-    r.id = nb_reservations + 1;
+    r.id = ++compteur_id;
     printf("Nom du client : ");
     scanf("%s", r.nom_client);
     printf("Nom de la salle : ");
@@ -110,67 +137,76 @@ void ajouterReservation() {
         return;
     }
 
-    if (!verifierDisponibilite(r)) {
-        printf("⚠️ Conflit détecté : la salle est déjà réservée à ce créneau.\n");
+    if (!verifierDisponibilite(racine, r)) {
+        printf(" Conflit détecté : la salle est déjà réservée à ce créneau.\n");
         return;
     }
 
-    reservations[nb_reservations++] = r;
+    racine = inserer(racine, r);
     printf("Réservation ajoutée avec succès.\n");
 }
 
 // ---------------- AFFICHER RESERVATIONS ----------------
+void afficherInOrder(Node* root) {
+    if (root == NULL) return;
+    afficherInOrder(root->left);
+    printf("ID: %d | Client: %s | Salle: %s | Date: %s | %s-%s | Tarif: %.2f DT\n",
+           root->data.id,
+           root->data.nom_client,
+           root->data.nom_salle,
+           root->data.date,
+           root->data.heure_debut,
+           root->data.heure_fin,
+           root->data.tarif);
+    afficherInOrder(root->right);
+}
+
 void afficherReservations() {
-    if (nb_reservations == 0) {
+    if (racine == NULL) {
         printf("Aucune réservation.\n");
         return;
     }
-    for (int i = 0; i < nb_reservations; i++) {
-        printf("ID: %d | Client: %s | Salle: %s | Date: %s | %s-%s | Tarif: %.2f DT\n",
-               reservations[i].id,
-               reservations[i].nom_client,
-               reservations[i].nom_salle,
-               reservations[i].date,
-               reservations[i].heure_debut,
-               reservations[i].heure_fin,
-               reservations[i].tarif);
-    }
+    afficherInOrder(racine);
 }
 
 // ---------------- GENERER FACTURE ----------------
 void genererFacture(int id) {
-    for (int i = 0; i < nb_reservations; i++) {
-        if (reservations[i].id == id) {
-            printf("\n--- FACTURE ---\n");
-            printf("Client : %s\n", reservations[i].nom_client);
-            printf("Salle  : %s\n", reservations[i].nom_salle);
-            printf("Date   : %s\n", reservations[i].date);
-            printf("Durée  : %s - %s\n", reservations[i].heure_debut, reservations[i].heure_fin);
-            printf("Montant: %.2f DT\n", reservations[i].tarif);
-            return;
-        }
+    Reservation* r = rechercher(racine, id);
+    if (r != NULL) {
+        printf("\n--- FACTURE ---\n");
+        printf("Client : %s\n", r->nom_client);
+        printf("Salle  : %s\n", r->nom_salle);
+        printf("Date   : %s\n", r->date);
+        printf("Durée  : %s - %s\n", r->heure_debut, r->heure_fin);
+        printf("Montant: %.2f DT\n", r->tarif);
+    } else {
+        printf("Réservation introuvable.\n");
     }
-    printf("Réservation introuvable.\n");
 }
 
 // ---------------- SAUVEGARDER ----------------
+void sauvegarderRec(Node* root, FILE* f) {
+    if (root == NULL) return;
+    sauvegarderRec(root->left, f);
+    fprintf(f, "%d;%s;%s;%s;%s;%s;%d;%.2f\n",
+            root->data.id,
+            root->data.nom_client,
+            root->data.nom_salle,
+            root->data.date,
+            root->data.heure_debut,
+            root->data.heure_fin,
+            root->data.nombre_personnes,
+            root->data.tarif);
+    sauvegarderRec(root->right, f);
+}
+
 void sauvegarder() {
     FILE *f = fopen("reservations.txt", "w");
     if (f == NULL) {
         printf("Erreur ouverture fichier.\n");
         return;
     }
-    for (int i = 0; i < nb_reservations; i++) {
-        fprintf(f, "%d;%s;%s;%s;%s;%s;%d;%.2f\n",
-                reservations[i].id,
-                reservations[i].nom_client,
-                reservations[i].nom_salle,
-                reservations[i].date,
-                reservations[i].heure_debut,
-                reservations[i].heure_fin,
-                reservations[i].nombre_personnes,
-                reservations[i].tarif);
-    }
+    sauvegarderRec(racine, f);
     fclose(f);
     printf("Données sauvegardées dans reservations.txt\n");
 }
@@ -182,51 +218,63 @@ void charger() {
         printf("Aucune donnée existante.\n");
         return;
     }
+    Reservation r;
     while (fscanf(f, "%d;%49[^;];%49[^;];%10[^;];%5[^;];%5[^;];%d;%f\n",
-                  &reservations[nb_reservations].id,
-                  reservations[nb_reservations].nom_client,
-                  reservations[nb_reservations].nom_salle,
-                  reservations[nb_reservations].date,
-                  reservations[nb_reservations].heure_debut,
-                  reservations[nb_reservations].heure_fin,
-                  &reservations[nb_reservations].nombre_personnes,
-                  &reservations[nb_reservations].tarif) == 8) {
-        nb_reservations++;
+                  &r.id,
+                  r.nom_client,
+                  r.nom_salle,
+                  r.date,
+                  r.heure_debut,
+                  r.heure_fin,
+                  &r.nombre_personnes,
+                  &r.tarif) ==  {
+        racine = inserer(racine, r);
+        if (r.id > compteur_id) compteur_id = r.id;
     }
     fclose(f);
-    printf("%d réservations chargées depuis reservations.txt\n", nb_reservations);
+    printf("Réservations chargées depuis reservations.txt\n");
+}// ---------------- STATISTIQUES ----------------
+void statistiquesRec(Node* root, float *CA, int *mois, int *nb_res) {
+    if (root == NULL) return;
+
+    // Chiffre d'affaires par salle
+    for (int i = 0; i < nb_salles; i++) {
+        if (strcmp(salles[i].nom, root->data.nom_salle) == 0) {
+            CA[i] += root->data.tarif;
+            nb_res[i]++;
+        }
+    }
+
+    // Nombre de réservations par mois
+    int m;
+    sscanf(root->data.date + 5, "%2d", &m); // extrait MM de YYYY-MM-DD
+    mois[m]++;
+
+    statistiquesRec(root->left, CA, mois, nb_res);
+    statistiquesRec(root->right, CA, mois, nb_res);
 }
 
-
-// ---------------- STATISTIQUES ----------------
 void statistiques() {
-    if (nb_reservations == 0) {
+    if (racine == NULL) {
         printf("Aucune donnée pour les statistiques.\n");
         return;
     }
 
+    float CA[MAX] = {0};
+    int nb_res_salle[MAX] = {0};
+    int mois[13] = {0};
+
+    statistiquesRec(racine, CA, mois, nb_res_salle);
+
     // Chiffre d'affaires par salle
     printf("\n--- Chiffre d'affaires par salle ---\n");
     for (int i = 0; i < nb_salles; i++) {
-        float totalCA = 0;
-        int count = 0;
-        for (int j = 0; j < nb_reservations; j++) {
-            if (strcmp(salles[i].nom, reservations[j].nom_salle) == 0) {
-                totalCA += reservations[j].tarif;
-                count++;
-            }
-        }
-        printf("Salle %s : %.2f DT (%d réservations)\n", salles[i].nom, totalCA, count);
+        printf("Salle %s : %.2f DT (%d réservations)\n",
+               salles[i].nom, CA[i], nb_res_salle[i]);
     }
 
     // Nombre de réservations par mois
     printf("\n--- Nombre de réservations par mois ---\n");
-    int mois[13] = {0};
-    for (int i = 0; i < nb_reservations; i++) {
-        int m;
-        sscanf(reservations[i].date + 5, "%2d", &m); // extrait MM de YYYY-MM-DD
-        mois[m]++;
-    }
     for (int i = 1; i <= 12; i++) {
         printf("Mois %02d : %d réservations\n", i, mois[i]);
     }
@@ -235,14 +283,8 @@ void statistiques() {
     int max = 0;
     char salle_populaire[50] = "";
     for (int i = 0; i < nb_salles; i++) {
-        int count = 0;
-        for (int j = 0; j < nb_reservations; j++) {
-            if (strcmp(salles[i].nom, reservations[j].nom_salle) == 0) {
-                count++;
-            }
-        }
-        if (count > max) {
-            max = count;
+        if (nb_res_salle[i] > max) {
+            max = nb_res_salle[i];
             strcpy(salle_populaire, salles[i].nom);
         }
     }
@@ -253,6 +295,7 @@ void statistiques() {
     else
         printf("Aucune réservation enregistrée.\n");
 }
+
 // ---------------- MAIN ----------------
 int main() {
     int choix, id;
