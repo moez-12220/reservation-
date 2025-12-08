@@ -227,17 +227,18 @@ void charger() {
                   r.heure_debut,
                   r.heure_fin,
                   &r.nombre_personnes,
-                  &r.tarif) ==  {
+                  &r.tarif) == 8) {
         racine = inserer(racine, r);
         if (r.id > compteur_id) compteur_id = r.id;
     }
     fclose(f);
     printf("Réservations chargées depuis reservations.txt\n");
-}// ---------------- STATISTIQUES ----------------
+}
+
+// ---------------- STATISTIQUES ----------------
 void statistiquesRec(Node* root, float *CA, int *mois, int *nb_res) {
     if (root == NULL) return;
 
-    // Chiffre d'affaires par salle
     for (int i = 0; i < nb_salles; i++) {
         if (strcmp(salles[i].nom, root->data.nom_salle) == 0) {
             CA[i] += root->data.tarif;
@@ -245,9 +246,8 @@ void statistiquesRec(Node* root, float *CA, int *mois, int *nb_res) {
         }
     }
 
-    // Nombre de réservations par mois
     int m;
-    sscanf(root->data.date + 5, "%2d", &m); // extrait MM de YYYY-MM-DD
+    sscanf(root->data.date + 5, "%2d", &m);
     mois[m]++;
 
     statistiquesRec(root->left, CA, mois, nb_res);
@@ -266,20 +266,17 @@ void statistiques() {
 
     statistiquesRec(racine, CA, mois, nb_res_salle);
 
-    // Chiffre d'affaires par salle
     printf("\n--- Chiffre d'affaires par salle ---\n");
     for (int i = 0; i < nb_salles; i++) {
         printf("Salle %s : %.2f DT (%d réservations)\n",
                salles[i].nom, CA[i], nb_res_salle[i]);
     }
 
-    // Nombre de réservations par mois
     printf("\n--- Nombre de réservations par mois ---\n");
     for (int i = 1; i <= 12; i++) {
         printf("Mois %02d : %d réservations\n", i, mois[i]);
     }
 
-    // Salle la plus populaire
     int max = 0;
     char salle_populaire[50] = "";
     for (int i = 0; i < nb_salles; i++) {
@@ -299,7 +296,7 @@ void statistiques() {
 // ---------------- MAIN ----------------
 int main() {
     int choix, id;
-    charger(); // Charger les données au démarrage
+    charger();
     do {
         menu();
         scanf("%d", &choix);
