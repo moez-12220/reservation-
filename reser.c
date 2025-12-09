@@ -22,15 +22,15 @@ typedef struct {
 } Reservation;
 
 // ----------- Arbre binaire pour les réservations -----------
-typedef struct Node {
+typedef struct Noeud {
     Reservation data;
-    struct Node *left;
-    struct Node *right;
-} Node;
+    struct Noeud *left;
+    struct Noeud *right;
+} Noeud;
 
 Salle salles[MAX];
 int nb_salles = 0;
-Node *racine = NULL; // racine de l'arbre
+Noeud *racine = NULL; // racine de l'arbre
 int compteur_id = 0;
 
 // ---------------- MENU ----------------
@@ -54,9 +54,9 @@ int convertirHeureEnMinutes(char *heure) {
 }
 
 // ---------------- INSÉRER DANS ARBRE ----------------
-Node* inserer(Node* root, Reservation r) {
+Noeud* inserer(Noeud* root, Reservation r) {
     if (root == NULL) {
-        Node* newNode = (Node*)malloc(sizeof(Node));
+        Noeud* newNode = (Noeud*)malloc(sizeof(Noeud));
         newNode->data = r;
         newNode->left = newNode->right = NULL;
         return newNode;
@@ -69,7 +69,7 @@ Node* inserer(Node* root, Reservation r) {
 }
 
 // ---------------- RECHERCHER ----------------
-Reservation* rechercher(Node* root, int id) {
+Reservation* rechercher(Noeud* root, int id) {
     if (root == NULL) return NULL;
     if (id == root->data.id) return &root->data;
     if (id < root->data.id) return rechercher(root->left, id);
@@ -77,7 +77,7 @@ Reservation* rechercher(Node* root, int id) {
 }
 
 // ---------------- VERIFIER DISPONIBILITE ----------------
-int verifierDisponibilite(Node* root, Reservation r) {
+int verifierDisponibilite(Noeud* root, Reservation r) {
     if (root == NULL) return 1;
     if (strcmp(r.nom_salle, root->data.nom_salle) == 0 &&
         strcmp(r.date, root->data.date) == 0) {
@@ -116,7 +116,7 @@ void ajouterReservation() {
     printf("Date (YYYY-MM-DD) : ");
     scanf("%s", r.date);
     printf("Heure début (HH:MM) : ");
-    scanf("%s", r.heure_debut);
+   	scanf("%s", r.heure_debut);
     printf("Heure fin (HH:MM) : ");
     scanf("%s", r.heure_fin);
     printf("Nombre de personnes : ");
@@ -147,7 +147,7 @@ void ajouterReservation() {
 }
 
 // ---------------- AFFICHER RESERVATIONS ----------------
-void afficherInOrder(Node* root) {
+void afficherInOrder(Noeud* root) {
     if (root == NULL) return;
     afficherInOrder(root->left);
     printf("ID: %d | Client: %s | Salle: %s | Date: %s | %s-%s | Tarif: %.2f DT\n",
@@ -185,7 +185,7 @@ void genererFacture(int id) {
 }
 
 // ---------------- SAUVEGARDER ----------------
-void sauvegarderRec(Node* root, FILE* f) {
+void sauvegarderRec(Noeud* root, FILE* f) {
     if (root == NULL) return;
     sauvegarderRec(root->left, f);
     fprintf(f, "%d;%s;%s;%s;%s;%s;%d;%.2f\n",
@@ -236,7 +236,7 @@ void charger() {
 }
 
 // ---------------- STATISTIQUES ----------------
-void statistiquesRec(Node* root, float *CA, int *mois, int *nb_res) {
+void statistiquesRec(Noeud* root, float *CA, int *mois, int *nb_res) {
     if (root == NULL) return;
 
     for (int i = 0; i < nb_salles; i++) {
