@@ -49,7 +49,7 @@ void menu() {
 // ---------------- FONCTION POUR COMPARER HEURES ----------------
 int convertirHeureEnMinutes(char *heure) {
     int h, m;
-    sscanf(heure, "%d:%d", &h, &m);
+    scanf(heure, "%d:%d", &h, &m);
     return h * 60 + m;
 }
 
@@ -247,7 +247,7 @@ void statistiquesRec(Noeud* root, float *CA, int *mois, int *nb_res) {
     }
 
     int m;
-    sscanf(root->data.date + 5, "%2d", &m);
+    scanf(root->data.date + 5, "%2d", &m);
     mois[m]++;
 
     statistiquesRec(root->left, CA, mois, nb_res);
