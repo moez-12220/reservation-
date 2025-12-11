@@ -14,9 +14,9 @@ typedef struct {
     int id;
     char nom_client[50];
     char nom_salle[50];
-    char date[11];       // format YYYY-MM-DD
-    char heure_debut[6]; // format HH:MM
-    char heure_fin[6];   // format HH:MM
+    char date[11];       
+    char heure_debut[6]; 
+    char heure_fin[6];   
     int nombre_personnes;
     float tarif;
 } Reservation;
@@ -30,7 +30,7 @@ typedef struct Noeud {
 
 Salle salles[MAX];
 int nb_salles = 0;
-Noeud *racine = NULL; // racine de l'arbre
+Noeud *racine = NULL; 
 int compteur_id = 0;
 
 // ---------------- MENU ----------------
