@@ -33,7 +33,7 @@ int nb_salles = 0;
 Noeud *racine = NULL; 
 int compteur_id = 0;
 
-// ---------------- MENU ----------------
+// ---------------- menu ----------------
 void menu() {
     printf("\n--- MENU PRINCIPAL ---\n");
     printf("1. Ajouter une salle\n");
@@ -53,7 +53,7 @@ int convertirHeureEnMinutes(char *heure) {
     return h * 60 + m;
 }
 
-// ---------------- INSÉRER DANS ARBRE ----------------
+// ---------------- INSERER DANS ARBRE ----------------
 Noeud* inserer(Noeud* root, Reservation r) {
     if (root == NULL) {
         Noeud* newNode = (Noeud*)malloc(sizeof(Noeud));
@@ -76,7 +76,7 @@ Reservation* rechercher(Noeud* root, int id) {
     else return rechercher(root->right, id);
 }
 
-// ---------------- VERIFIER DISPONIBILITE ----------------
+// ---------------- VERIFIE DISPONIBILTE ----------------
 int verifierDisponibilite(Noeud* root, Reservation r) {
     if (root == NULL) return 1;
     if (strcmp(r.nom_salle, root->data.nom_salle) == 0 &&
@@ -235,7 +235,7 @@ void charger() {
     printf("Réservations chargées depuis reservations.txt\n");
 }
 
-// ---------------- STATISTIQUES ----------------
+// ---------------- STATISTIQUE ----------------
 void statistiquesRec(Noeud* root, float *CA, int *mois, int *nb_res) {
     if (root == NULL) return;
 
